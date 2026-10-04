@@ -11,22 +11,34 @@ SQLite locally), pytest, GitHub Actions
 
 ## Key findings
 
-Based on a 90-day backfill (about 2,184 hourly readings per city, up to early October 2026):
+## Key findings
+
+Based on about 2,160 hourly readings per city (6 July to 3 October 2026, forecast hours excluded):
 
 | City | Average PM2.5 (ug/m3) | Hours above WHO guideline |
 |---|---|---|
-| London | 6.4 | 2.3% |
-| Manchester | 5.9 | 1.4% |
-| **Bristol** | **5.6** | **1.1%** |
-| Birmingham | 5.5 | 0.4% |
-| Leeds | 5.4 | 0.3% |
+| London | 6.3 | (from query) % |
+| Manchester | 5.9 | (from query) % |
+| **Bristol** | **5.6** | (from query) % |
+| Birmingham | 5.5 | (from query) % |
+| Leeds | 5.3 | (from query) % |
 
-- London had the highest average PM2.5 and the largest share of hours above the WHO guideline.
-  Bristol ranked third of five.
+- London had the highest average PM2.5, and Bristol ranked third of five.
 - All five cities averaged well below the WHO 24-hour guideline of 15 ug/m3.
-- The differences between cities are small (5.4 to 6.4 ug/m3), and the window covers only about
-  three months of summer and autumn, so these results should not be read as a full-year picture.
-  The table is a snapshot, and the numbers will shift as the daily pipeline adds more data.
+- Differences between cities are small, and the window covers only about three months of summer
+  and autumn, so this is a snapshot and not a full-year picture.
+- Modelled NO2 follows a daily cycle: roughly 13 ug/m3 around 07:00 UTC and again late evening,
+  and about 5 ug/m3 in the early afternoon. Because the data is modelled at about 11 km resolution,
+  this shows the regional pattern and not street-level traffic effects.
+
+## Dashboard
+
+A Power BI report built on the Azure database, with DAX measures, a city selector and a date range.
+
+![Power BI dashboard](dashboard/dashboard.png)
+
+A PDF version is in [`dashboard/air_quality_dashboard.pdf`](dashboard/air_quality_dashboard.pdf).
+The dashboard is a snapshot of the data at export time, because it reads Azure in Import mode.
 
 ## How it works
 
