@@ -11,8 +11,6 @@ SQLite locally), pytest, GitHub Actions
 
 ## Key findings
 
-## Key findings
-
 Based on about 2,160 hourly readings per city (6 July to 3 October 2026, forecast hours excluded):
 
 | City | Average PM2.5 (ug/m3) | Hours above WHO guideline |
