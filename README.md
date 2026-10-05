@@ -1,47 +1,64 @@
 # UK Air Quality Data Pipeline
 
 An automated ETL pipeline that collects hourly air-quality data for five UK cities, cleans and
-validates it, and loads it into Azure SQL Database for analysis. A scheduled GitHub Actions
-workflow runs it every day, so the dataset keeps growing without manual work.
+validates it, and loads it into Azure SQL Database. A scheduled GitHub Actions workflow runs it
+every day, and a Power BI dashboard sits on top of the data.
 
 **Business question:** How does air quality in Bristol compare with other major UK cities?
 
 **Tech stack:** Python (pandas, requests, pymssql), SQL (Azure SQL Database in production,
-SQLite locally), pytest, GitHub Actions
+SQLite locally), pytest, GitHub Actions, Power BI
 
 ## Key findings
 
-Based on about 2,160 hourly readings per city (6 July to 3 October 2026, forecast hours excluded):
+Findings cover 6 July to 3 October 2026 (about 2,160 hourly readings per city, forecast hours excluded).
 
-| City | Average PM2.5 (ug/m3) | Hours above WHO guideline |
-|---|---|---|
-| London | 6.3 | (from query) % |
-| Manchester | 5.9 | (from query) % |
-| **Bristol** | **5.6** | (from query) % |
-| Birmingham | 5.5 | (from query) % |
-| Leeds | 5.3 | (from query) % |
+| City | Average PM2.5 (ug/m3) |
+|---|---|
+| London | 6.3 |
+| Manchester | 5.9 |
+| **Bristol** | **5.6** |
+| Birmingham | 5.5 |
+| Leeds | 5.3 |
 
 - London had the highest average PM2.5, and Bristol ranked third of five.
-- All five cities averaged well below the WHO 24-hour guideline of 15 ug/m3.
-- Differences between cities are small, and the window covers only about three months of summer
-  and autumn, so this is a snapshot and not a full-year picture.
+- Across all five cities, about 1.1% of hours were above the WHO 24-hour guideline of 15 ug/m3,
+  and every city's average was well below it.
+- The differences between cities are small, and the window covers only about three months of
+  summer and autumn, so this is a snapshot and not a full-year picture.
 - Modelled NO2 follows a daily cycle: roughly 13 ug/m3 around 07:00 UTC and again late evening,
-  and about 5 ug/m3 in the early afternoon. Because the data is modelled at about 11 km resolution,
-  this shows the regional pattern and not street-level traffic effects.
+  and about 5 ug/m3 in the early afternoon. Because the data is modelled at about 11 km
+  resolution, this shows a regional pattern and not street-level traffic effects.
 
 ## Dashboard
 
-A Power BI report built on the Azure database, with DAX measures, a city selector and a date range.
+![Power BI dashboard](dashboard/air_quality_dashboard.png)
 
-![Power BI dashboard](dashboard/dashboard.png)
+[Download the dashboard as a PDF](dashboard/air_quality_dashboard.pdf)
 
-A PDF version is in [`dashboard/air_quality_dashboard.pdf`](dashboard/air_quality_dashboard.pdf).
-The dashboard is a snapshot of the data at export time, because it reads Azure in Import mode.
+A Power BI report built on the Azure SQL database. It reads a view with ready-made date and hour
+fields, and uses DAX measures for the headline figures.
+
+```sql
+CREATE OR ALTER VIEW dbo.vw_air_quality AS
+SELECT city,
+       [time]                    AS reading_time,
+       CAST([time] AS date)      AS reading_date,
+       DATEPART(hour, [time])    AS hour_utc,
+       DATENAME(weekday, [time]) AS weekday_name,
+       pm10, pm2_5, nitrogen_dioxide, ozone, above_who_pm25
+FROM dbo.air_quality;
+```
+
+It shows average PM2.5 and the share of hours above the WHO guideline, PM2.5 by city (Bristol
+highlighted), a daily PM2.5 trend per city, NO2 by hour of day, and city and date-range selectors.
+The dashboard is a snapshot taken at export time, because it reads Azure in Import mode and
+needs a manual refresh.
 
 ## How it works
 
 ```
-Open-Meteo Air Quality API --> extract.py --> transform.py --> load_azure.py --> Azure SQL Database
+Open-Meteo Air Quality API --> extract.py --> transform.py --> load_azure.py --> Azure SQL Database --> Power BI
       (hourly JSON)            fetch + retry   clean + validate  MERGE upsert      air_quality
                                                                                    pipeline_runs
                                        ^
@@ -70,6 +87,7 @@ Open-Meteo Air Quality API --> extract.py --> transform.py --> load_azure.py -->
 etl/            config.py, extract.py, transform.py, load.py (SQLite), load_azure.py (Azure SQL)
 tests/          test_pipeline.py, test_azure_load.py
 sql/            analysis.sql (aggregation, window function, CTE and join examples, SQLite syntax)
+dashboard/      Power BI dashboard (PNG and PDF exports)
 data/           air_quality.db (local SQLite snapshot from the initial backfill)
 run_pipeline.py entry point
 .github/workflows/daily.yml
@@ -123,9 +141,9 @@ accessed via Open-Meteo.
 ## Next steps
 
 - Batch the `MERGE` statements to make large backfills much faster.
-- Analyse the daily NO2 pattern by hour (rush-hour peaks) and compare weekdays with weekends.
-- Add a Tableau or Power BI dashboard connected to the Azure database.
+- Compare weekdays with weekends in the NO2 daily cycle.
+- Translate the example SQL queries to T-SQL.
 
 ## Author
 
-Muhammad Usman Khan, Bristol, UK
+Muhammad Usman Khan
